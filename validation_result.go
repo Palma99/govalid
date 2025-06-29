@@ -1,4 +1,4 @@
-package core
+package govalid
 
 type ValidationResult struct {
 	errors    []ValidationError

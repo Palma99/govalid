@@ -1,4 +1,4 @@
-package core
+package govalid
 
 func Validate(validations ...ValidationFunc) ValidationResult {
 	result := NewValidationResult()

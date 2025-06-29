@@ -1,14 +1,15 @@
-package core
+package govalid_test
 
 import (
 	"errors"
 	"testing"
 
+	"github.com/Palma99/govalid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewValidationError(t *testing.T) {
-	err := NewValidationError("name", "required")
+	err := govalid.NewValidationError("name", "required")
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "name", err.Field())
@@ -16,7 +17,7 @@ func TestNewValidationError(t *testing.T) {
 }
 
 func TestNewValidationErrorf(t *testing.T) {
-	err := NewValidationErrorf("age", "must be at least %d", 18)
+	err := govalid.NewValidationErrorf("age", "must be at least %d", 18)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "age", err.Field())
@@ -24,7 +25,7 @@ func TestNewValidationErrorf(t *testing.T) {
 }
 
 func TestValidationError_ErrorMethod(t *testing.T) {
-	err := NewValidationError("email", "invalid format")
+	err := govalid.NewValidationError("email", "invalid format")
 
 	e := err.Error()
 	assert.NotNil(t, e)

@@ -1,11 +1,11 @@
-package core
+package govalid
 
 import (
 	"fmt"
 	"regexp"
 )
 
-func NonEmpty(fieldName, value string, args ...interface{}) ValidationFunc {
+func NonEmpty(fieldName, value string, args ...any) ValidationFunc {
 	message := "must not be empty"
 	if len(args) > 0 {
 		message = fmt.Sprintf(args[0].(string), args[1:]...)
@@ -22,7 +22,7 @@ func NonEmpty(fieldName, value string, args ...interface{}) ValidationFunc {
 	}
 }
 
-func MaxLength(fieldName, value string, max int, args ...interface{}) ValidationFunc {
+func MaxLength(fieldName, value string, max int, args ...any) ValidationFunc {
 	return func() *ValidationError {
 		if len(value) > max {
 			return NewValidationErrorf(

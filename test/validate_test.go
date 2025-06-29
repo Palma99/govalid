@@ -1,13 +1,14 @@
-package core
+package govalid_test
 
 import (
 	"testing"
 
+	"github.com/Palma99/govalid"
 	"github.com/stretchr/testify/assert"
 )
 
-func createValidatorSpy(counter *int, testErr *ValidationError) ValidationFunc {
-	return func() *ValidationError {
+func createValidatorSpy(counter *int, testErr *govalid.ValidationError) govalid.ValidationFunc {
+	return func() *govalid.ValidationError {
 		*counter += 1
 		if testErr != nil {
 			return testErr
@@ -19,7 +20,7 @@ func createValidatorSpy(counter *int, testErr *ValidationError) ValidationFunc {
 func TestValidateShouldCallAllValidators(t *testing.T) {
 	callCount := 0
 
-	Validate(
+	govalid.Validate(
 		createValidatorSpy(&callCount, nil),
 		createValidatorSpy(&callCount, nil),
 		createValidatorSpy(&callCount, nil),
@@ -31,11 +32,11 @@ func TestValidateShouldCallAllValidators(t *testing.T) {
 func TestValidateShouldReturnAllErrors(t *testing.T) {
 	callCount := 0
 
-	res := Validate(
-		createValidatorSpy(&callCount, NewValidationError("field1", "test error1")),
-		createValidatorSpy(&callCount, NewValidationError("field2", "test error2")),
+	res := govalid.Validate(
+		createValidatorSpy(&callCount, govalid.NewValidationError("field1", "test error1")),
+		createValidatorSpy(&callCount, govalid.NewValidationError("field2", "test error2")),
 		createValidatorSpy(&callCount, nil),
-		createValidatorSpy(&callCount, NewValidationError("field3", "test error3")),
+		createValidatorSpy(&callCount, govalid.NewValidationError("field3", "test error3")),
 	)
 
 	assert.Equal(t, 4, callCount)
@@ -56,7 +57,7 @@ func TestValidateShouldReturnAllErrors(t *testing.T) {
 func TestValidateShouldReturnNoErrors(t *testing.T) {
 	callCount := 0
 
-	res := Validate(
+	res := govalid.Validate(
 		createValidatorSpy(&callCount, nil),
 		createValidatorSpy(&callCount, nil),
 	)

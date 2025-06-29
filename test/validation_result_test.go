@@ -1,23 +1,24 @@
-package core
+package govalid_test
 
 import (
 	"testing"
 
+	"github.com/Palma99/govalid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestValidationResultConstructorWithoutErrors(t *testing.T) {
-	res := NewValidationResult()
+	res := govalid.NewValidationResult()
 
 	assert.False(t, res.HasErrors())
 	assert.Len(t, res.Errors(), 0)
 }
 
 func TestValidationResultConstructorWithErrors(t *testing.T) {
-	res := NewValidationResult(
-		*NewValidationError("name", "test error"),
-		*NewValidationError("surname", "test error"),
-		*NewValidationError("age", "test error"),
+	res := govalid.NewValidationResult(
+		*govalid.NewValidationError("name", "test error"),
+		*govalid.NewValidationError("surname", "test error"),
+		*govalid.NewValidationError("age", "test error"),
 	)
 
 	assert.True(t, res.HasErrors())
@@ -25,11 +26,11 @@ func TestValidationResultConstructorWithErrors(t *testing.T) {
 }
 
 func TestValidationResultAddError(t *testing.T) {
-	res := NewValidationResult()
+	res := govalid.NewValidationResult()
 
-	res.AddError(*NewValidationError("name", "test error"))
-	res.AddError(*NewValidationError("surname", "test error"))
-	res.AddError(*NewValidationError("age", "test error"))
+	res.AddError(*govalid.NewValidationError("name", "test error"))
+	res.AddError(*govalid.NewValidationError("surname", "test error"))
+	res.AddError(*govalid.NewValidationError("age", "test error"))
 
 	assert.True(t, res.HasErrors())
 	assert.Len(t, res.Errors(), 3)
@@ -39,8 +40,8 @@ func TestValidationResultNextError(t *testing.T) {
 	type testCase struct {
 		name            string
 		expectedHasMore bool
-		expectedError   *ValidationError
-		testErrors      []*ValidationError
+		expectedError   *govalid.ValidationError
+		testErrors      []*govalid.ValidationError
 	}
 
 	testCases := []testCase{
@@ -48,21 +49,21 @@ func TestValidationResultNextError(t *testing.T) {
 			name:            "should return nil	if no errors",
 			expectedHasMore: false,
 			expectedError:   nil,
-			testErrors:      []*ValidationError{},
+			testErrors:      []*govalid.ValidationError{},
 		},
 		{
 			name:          "should return the first error if called one time",
-			expectedError: NewValidationError("name", "test error1"),
-			testErrors: []*ValidationError{
-				NewValidationError("name", "test error1"),
-				NewValidationError("surname", "test error2"),
+			expectedError: govalid.NewValidationError("name", "test error1"),
+			testErrors: []*govalid.ValidationError{
+				govalid.NewValidationError("name", "test error1"),
+				govalid.NewValidationError("surname", "test error2"),
 			},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			res := NewValidationResult()
+			res := govalid.NewValidationResult()
 
 			for _, err := range tc.testErrors {
 				res.AddError(*err)
@@ -75,11 +76,11 @@ func TestValidationResultNextError(t *testing.T) {
 }
 
 func TestValidationResultNextErrorShouldReturnAllErrors(t *testing.T) {
-	res := NewValidationResult()
+	res := govalid.NewValidationResult()
 
-	res.AddError(*NewValidationError("name", "test error1"))
-	res.AddError(*NewValidationError("surname", "test error2"))
-	res.AddError(*NewValidationError("age", "test error3"))
+	res.AddError(*govalid.NewValidationError("name", "test error1"))
+	res.AddError(*govalid.NewValidationError("surname", "test error2"))
+	res.AddError(*govalid.NewValidationError("age", "test error3"))
 
 	for i := range 3 {
 		validationError := res.NextError()
@@ -91,10 +92,10 @@ func TestValidationResultNextErrorShouldReturnAllErrors(t *testing.T) {
 }
 
 func TestValidationResultNextErrorShouldReturnNilIfAllErrorsAreConsumed(t *testing.T) {
-	res := NewValidationResult(
-		*NewValidationError("name", "test error1"),
-		*NewValidationError("surname", "test error2"),
-		*NewValidationError("age", "test error3"),
+	res := govalid.NewValidationResult(
+		*govalid.NewValidationError("name", "test error1"),
+		*govalid.NewValidationError("surname", "test error2"),
+		*govalid.NewValidationError("age", "test error3"),
 	)
 
 	for range res.Errors() {

@@ -1,4 +1,4 @@
-package core
+package govalid
 
 import (
 	"fmt"
