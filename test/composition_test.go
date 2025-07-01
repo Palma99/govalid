@@ -4,26 +4,27 @@ import (
 	"testing"
 
 	"github.com/Palma99/govalid"
+	"github.com/Palma99/govalid/internal"
 	"github.com/Palma99/govalid/validators"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestCompose(t *testing.T) {
 	t.Run("should compose multiple validations", func(t *testing.T) {
-		composed := govalid.Compose(
-			func() *govalid.ValidationError { return nil },
-			func() *govalid.ValidationError { return nil },
-			func() *govalid.ValidationError { return nil },
+		composed := govalid.ComposeShortCircuit(
+			func() *internal.ValidationError { return nil },
+			func() *internal.ValidationError { return nil },
+			func() *internal.ValidationError { return nil },
 		)
 
 		assert.Nil(t, composed())
 	})
 
 	t.Run("should return first error", func(t *testing.T) {
-		composed := govalid.Compose(
-			func() *govalid.ValidationError { return nil },
-			func() *govalid.ValidationError { return govalid.NewValidationError("name", "test error1") },
-			func() *govalid.ValidationError { return govalid.NewValidationError("surname", "test error2") },
+		composed := govalid.ComposeShortCircuit(
+			func() *internal.ValidationError { return nil },
+			func() *internal.ValidationError { return internal.NewValidationError("name", "test error1") },
+			func() *internal.ValidationError { return internal.NewValidationError("surname", "test error2") },
 		)
 
 		assert.NotNil(t, composed())
@@ -34,7 +35,7 @@ func TestCompose(t *testing.T) {
 
 func TestGroup(t *testing.T) {
 	t.Run("should group multiple validations", func(t *testing.T) {
-		grouped := govalid.Group("name", "Mario",
+		grouped := govalid.GroupShortCircuit("name", "Mario",
 			validators.NonEmptyRule(),
 			validators.MaxLengthRule(10),
 		)
@@ -43,7 +44,7 @@ func TestGroup(t *testing.T) {
 	})
 
 	t.Run("should return first error if multiple validations", func(t *testing.T) {
-		grouped := govalid.Group("name", "",
+		grouped := govalid.GroupShortCircuit("name", "",
 			validators.NonEmptyRule(),
 			validators.MinLengthRule(100),
 		)
@@ -54,7 +55,7 @@ func TestGroup(t *testing.T) {
 	})
 
 	t.Run("should return second error if multiple validations", func(t *testing.T) {
-		grouped := govalid.Group("name", "Mario",
+		grouped := govalid.GroupShortCircuit("name", "Mario",
 			validators.NonEmptyRule(),
 			validators.MinLengthRule(100),
 		)

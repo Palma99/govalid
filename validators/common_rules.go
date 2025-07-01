@@ -4,6 +4,18 @@ import (
 	"github.com/Palma99/govalid"
 )
 
+type Rule func(customMessage ...string) govalid.ValidationRule
+
+// CustomRule is a function that returns a ValidationRule
+// that uses a custom validator
+func CustomRule[T any](validator Validator) Rule {
+	return func(customMessage ...string) govalid.ValidationRule {
+		return func(field string, value any) govalid.ValidationFunc {
+			return validator(field, value, customMessage...)
+		}
+	}
+}
+
 func NonEmptyRule(customMessage ...string) govalid.ValidationRule {
 	return func(field string, value any) govalid.ValidationFunc {
 		return NonEmpty(field, value, customMessage...)

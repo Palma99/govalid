@@ -4,12 +4,12 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/Palma99/govalid"
+	"github.com/Palma99/govalid/internal"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewValidationError(t *testing.T) {
-	err := govalid.NewValidationError("name", "required")
+	err := internal.NewValidationError("name", "required")
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "name", err.Field())
@@ -17,7 +17,7 @@ func TestNewValidationError(t *testing.T) {
 }
 
 func TestNewValidationErrorf(t *testing.T) {
-	err := govalid.NewValidationErrorf("age", "must be at least %d", 18)
+	err := internal.NewValidationErrorf("age", "must be at least %d", 18)
 
 	assert.NotNil(t, err)
 	assert.Equal(t, "age", err.Field())
@@ -25,7 +25,7 @@ func TestNewValidationErrorf(t *testing.T) {
 }
 
 func TestValidationError_ErrorMethod(t *testing.T) {
-	err := govalid.NewValidationError("email", "invalid format")
+	err := internal.NewValidationError("email", "invalid format")
 
 	e := err.Error()
 	assert.NotNil(t, e)

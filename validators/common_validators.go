@@ -10,9 +10,33 @@ import (
 	"github.com/Palma99/govalid/internal/utils"
 )
 
+type Validator func(fieldName string, value any, args ...string) govalid.ValidationFunc
+
+// Allows to define custom validation logic
+func CustomValidator[T any](validate func(value T) *string) Validator {
+	return func(fieldName string, value any, args ...string) govalid.ValidationFunc {
+		return func() *internal.ValidationError {
+
+			switch v := value.(type) {
+			case T:
+				if err := validate(v); err != nil {
+					return internal.NewValidationError(fieldName,
+						utils.GetOptionalStringOrDefault(
+							*err,
+							args...,
+						),
+					)
+				}
+			}
+
+			return nil
+		}
+	}
+}
+
 func NonEmpty(fieldName string, value any, args ...string) govalid.ValidationFunc {
-	return func() *govalid.ValidationError {
-		validationError := govalid.NewValidationError(
+	return func() *internal.ValidationError {
+		validationError := internal.NewValidationError(
 			fieldName,
 			utils.GetOptionalStringOrDefault("must not be empty", args...),
 		)
@@ -36,11 +60,11 @@ func NonEmpty(fieldName string, value any, args ...string) govalid.ValidationFun
 }
 
 func Min[T internal.Number](fieldName string, value any, min T, args ...string) govalid.ValidationFunc {
-	return func() *govalid.ValidationError {
+	return func() *internal.ValidationError {
 		switch v := value.(type) {
 		case T:
 			if v < min {
-				return govalid.NewValidationErrorf(
+				return internal.NewValidationErrorf(
 					fieldName,
 					utils.GetOptionalStringOrDefault(
 						fmt.Sprintf("must be at least %v", min),
@@ -54,11 +78,11 @@ func Min[T internal.Number](fieldName string, value any, min T, args ...string) 
 }
 
 func Max[T internal.Number](fieldName string, value any, max T, args ...string) govalid.ValidationFunc {
-	return func() *govalid.ValidationError {
+	return func() *internal.ValidationError {
 		switch v := value.(type) {
 		case T:
 			if v > max {
-				return govalid.NewValidationErrorf(
+				return internal.NewValidationErrorf(
 					fieldName,
 					utils.GetOptionalStringOrDefault(
 						fmt.Sprintf("must be at most %v", max),
@@ -72,10 +96,10 @@ func Max[T internal.Number](fieldName string, value any, max T, args ...string) 
 }
 
 func MinLength(fieldName string, value any, min int, args ...string) govalid.ValidationFunc {
-	return func() *govalid.ValidationError {
+	return func() *internal.ValidationError {
 		length, err := utils.GetLength(value)
 		if err != nil {
-			return govalid.NewValidationError(fieldName, err.Error())
+			return internal.NewValidationError(fieldName, err.Error())
 		}
 
 		if length < min {
@@ -83,17 +107,17 @@ func MinLength(fieldName string, value any, min int, args ...string) govalid.Val
 				fmt.Sprintf("must be at least %d characters", min),
 				args...,
 			)
-			return govalid.NewValidationError(fieldName, msg)
+			return internal.NewValidationError(fieldName, msg)
 		}
 		return nil
 	}
 }
 
 func MaxLength(fieldName string, value any, max int, args ...string) govalid.ValidationFunc {
-	return func() *govalid.ValidationError {
+	return func() *internal.ValidationError {
 		length, err := utils.GetLength(value)
 		if err != nil {
-			return govalid.NewValidationError(fieldName, err.Error())
+			return internal.NewValidationError(fieldName, err.Error())
 		}
 
 		if length > max {
@@ -101,17 +125,17 @@ func MaxLength(fieldName string, value any, max int, args ...string) govalid.Val
 				fmt.Sprintf("must be at most %d characters", max),
 				args...,
 			)
-			return govalid.NewValidationError(fieldName, msg)
+			return internal.NewValidationError(fieldName, msg)
 		}
 		return nil
 	}
 }
 
 func MatchesRegex(fieldName, value, pattern string, args ...string) govalid.ValidationFunc {
-	return func() *govalid.ValidationError {
+	return func() *internal.ValidationError {
 		matched, err := regexp.MatchString(pattern, value)
 		if err != nil || !matched {
-			return govalid.NewValidationError(
+			return internal.NewValidationError(
 				fieldName,
 				utils.GetOptionalStringOrDefault(
 					fmt.Sprintf("must match pattern %s", pattern),

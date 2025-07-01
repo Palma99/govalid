@@ -4,12 +4,13 @@ import (
 	"testing"
 
 	"github.com/Palma99/govalid"
+	"github.com/Palma99/govalid/internal"
 	"github.com/Palma99/govalid/validators"
 	"github.com/stretchr/testify/assert"
 )
 
-func createValidatorSpy(counter *int, testErr *govalid.ValidationError) govalid.ValidationFunc {
-	return func() *govalid.ValidationError {
+func createValidatorSpy(counter *int, testErr *internal.ValidationError) govalid.ValidationFunc {
+	return func() *internal.ValidationError {
 		*counter += 1
 		if testErr != nil {
 			return testErr
@@ -34,10 +35,10 @@ func TestValidateShouldReturnAllErrors(t *testing.T) {
 	callCount := 0
 
 	res := govalid.Validate(
-		createValidatorSpy(&callCount, govalid.NewValidationError("field1", "test error1")),
-		createValidatorSpy(&callCount, govalid.NewValidationError("field2", "test error2")),
+		createValidatorSpy(&callCount, internal.NewValidationError("field1", "test error1")),
+		createValidatorSpy(&callCount, internal.NewValidationError("field2", "test error2")),
 		createValidatorSpy(&callCount, nil),
-		createValidatorSpy(&callCount, govalid.NewValidationError("field3", "test error3")),
+		createValidatorSpy(&callCount, internal.NewValidationError("field3", "test error3")),
 	)
 
 	assert.Equal(t, 4, callCount)
@@ -55,24 +56,40 @@ func TestValidateShouldReturnAllErrors(t *testing.T) {
 	assert.Equal(t, "test error3", errors[2].Message())
 }
 
+func TestValidateShortCircuitShouldReturnFirstError(t *testing.T) {
+	callCount := 0
+	res := govalid.ValidateShortCircuit(
+		createValidatorSpy(&callCount, internal.NewValidationError("field1", "test error1")),
+		createValidatorSpy(&callCount, internal.NewValidationError("field2", "test error2")),
+		createValidatorSpy(&callCount, nil),
+		createValidatorSpy(&callCount, internal.NewValidationError("field3", "test error3")),
+	)
+
+	assert.True(t, res.HasErrors())
+	assert.Equal(t, 1, callCount)
+
+	assert.Equal(t, "field1", res.FirstError().Field())
+	assert.Equal(t, "test error1", res.FirstError().Message())
+}
+
 func TestValidateShouldWorkWithCustomValidator(t *testing.T) {
 	t.Run("should work with custom validator", func(t *testing.T) {
 		res := govalid.Validate(
 			(func(field, value string) govalid.ValidationFunc {
-				return func() *govalid.ValidationError {
+				return func() *internal.ValidationError {
 					if field == value {
 						return nil
 					}
-					return govalid.NewValidationError(field, "must be equal to "+value)
+					return internal.NewValidationError(field, "must be equal to "+value)
 				}
 			})("field1", "test value"),
 
 			(func(field, value string) govalid.ValidationFunc {
-				return func() *govalid.ValidationError {
+				return func() *internal.ValidationError {
 					if value == "value" {
 						return nil
 					}
-					return govalid.NewValidationError(field, "must be equal to value")
+					return internal.NewValidationError(field, "must be equal to value")
 				}
 			})("field2", "value"),
 		)
@@ -98,12 +115,12 @@ func TestValidateShouldReturnNoErrors(t *testing.T) {
 
 func TestValidateShouldWorkWithCompose(t *testing.T) {
 	t.Run("should work with compose", func(t *testing.T) {
-		composed1 := govalid.Compose(
+		composed1 := govalid.ComposeShortCircuit(
 			validators.NonEmpty("name", ""),
 			validators.NonEmpty("surname", ""),
 		)
 
-		composed2 := govalid.Compose(
+		composed2 := govalid.ComposeShortCircuit(
 			validators.NonEmpty("age", ""),
 			validators.NonEmpty("city", ""),
 		)
@@ -160,16 +177,16 @@ func TestValidateShouldWorkWithComposeAndGroup(t *testing.T) {
 			Age:  12,
 		}
 
-		nameValidator := govalid.Group("name", person.Name,
+		nameValidator := govalid.GroupShortCircuit("name", person.Name,
 			validators.NonEmptyRule(),
 			validators.MinLengthRule(3),
 		)
 
-		ageValidator := govalid.Group("age", person.Age,
+		ageValidator := govalid.GroupShortCircuit("age", person.Age,
 			validators.MinRule(14, "you are too young!"),
 		)
 
-		personValidator := govalid.Compose(
+		personValidator := govalid.ComposeShortCircuit(
 			nameValidator,
 			ageValidator,
 		)
@@ -188,22 +205,22 @@ func TestValidateShouldWorkWithComposeAndGroup(t *testing.T) {
 func TestValidateWithComposeAll(t *testing.T) {
 	t.Run("validate with ComposeAll should return all errors", func(t *testing.T) {
 
-		compose1 := govalid.ComposeAll(
+		compose1 := govalid.Compose(
 			validators.NonEmpty("name", ""),
 			validators.NonEmpty("surname", ""),
 		)
 
-		compose2 := govalid.ComposeAll(
+		compose2 := govalid.Compose(
 			validators.NonEmpty("age", ""),
 			validators.NonEmpty("city", ""),
 		)
 
-		emailGroup := govalid.GroupAll("email", "",
+		emailGroup := govalid.Group("email", "",
 			validators.NonEmptyRule(),
 			validators.IsEmailRule(),
 		)
 
-		res := govalid.ValidateAll(
+		res := govalid.Validate(
 			compose1, compose2, emailGroup,
 		)
 
@@ -213,27 +230,27 @@ func TestValidateWithComposeAll(t *testing.T) {
 
 	t.Run("validate with ComposeAll Compose, Group, GroupAll should return all errors", func(t *testing.T) {
 
-		compose := govalid.ComposeAll(
+		compose := govalid.Compose(
 			validators.NonEmpty("name", ""),
 			validators.NonEmpty("surname", ""),
 		)
 
-		composeAll := govalid.Compose(
+		composeAll := govalid.ComposeShortCircuit(
 			validators.NonEmpty("age", ""),
 			validators.NonEmpty("city", ""),
 			validators.NonEmpty("address", ""),
 		)
 
-		group := govalid.GroupAll("email", "",
+		group := govalid.Group("email", "",
 			validators.NonEmptyRule(),
 			validators.IsEmailRule(),
 		)
 
-		groupAll := govalid.Group("phone", "",
+		groupAll := govalid.GroupShortCircuit("phone", "",
 			validators.NonEmptyRule(),
 		)
 
-		res := govalid.ValidateAll(
+		res := govalid.Validate(
 			compose, composeAll, group, groupAll,
 		)
 
@@ -243,7 +260,66 @@ func TestValidateWithComposeAll(t *testing.T) {
 
 	t.Run("should throw error if validator is not of type govalid.Validator", func(t *testing.T) {
 		assert.Panics(t, func() {
-			govalid.ValidateAll(1)
+			govalid.Validate(1)
 		})
 	})
+}
+
+func TestValidateAndFailFast(t *testing.T) {
+	t.Run("should work with compose and group", func(t *testing.T) {
+		person := struct {
+			Name string
+			Age  int
+		}{
+			Name: "Mario",
+			Age:  18,
+		}
+
+		nameValidator := govalid.GroupShortCircuit("name", person.Name,
+			validators.NonEmptyRule(),
+			validators.MinLengthRule(3),
+		)
+
+		ageValidator := govalid.GroupShortCircuit("age", person.Age,
+			validators.MinRule(14),
+		)
+
+		personValidator := govalid.ComposeShortCircuit(
+			nameValidator,
+			ageValidator,
+		)
+
+		res := govalid.ValidateShortCircuit(
+			personValidator,
+		)
+
+		assert.False(t, res.HasErrors())
+	})
+
+	t.Run("should return only the first error", func(t *testing.T) {
+		composed1 := govalid.ComposeShortCircuit(
+			validators.NonEmpty("name", ""),
+			validators.NonEmpty("surname", ""),
+		)
+
+		composed2 := govalid.ComposeShortCircuit(
+			validators.NonEmpty("age", ""),
+			validators.NonEmpty("city", ""),
+		)
+
+		res := govalid.ValidateShortCircuit(
+			composed1, composed2,
+		)
+
+		assert.True(t, res.HasErrors())
+		assert.Len(t, res.Errors(), 1)
+		assert.Equal(t, "name", res.FirstError().Field())
+	})
+
+	t.Run("Should panic if validator is not of type govalid.Validator", func(t *testing.T) {
+		assert.Panics(t, func() {
+			govalid.ValidateShortCircuit(1)
+		})
+	})
+
 }
