@@ -11,22 +11,27 @@ import (
 
 func TestCompose(t *testing.T) {
 	t.Run("should compose multiple validations", func(t *testing.T) {
-		composed := govalid.ComposeShortCircuit(
-			func() *internal.ValidationError { return nil },
-			func() *internal.ValidationError { return nil },
-			func() *internal.ValidationError { return nil },
-		)
+		var v govalid.ValidationFunc = func() *internal.ValidationError {
+			return nil
+		}
+
+		composed := govalid.ComposeShortCircuit(v, v, v)
 
 		assert.Nil(t, composed())
 	})
 
 	t.Run("should return first error", func(t *testing.T) {
-		composed := govalid.ComposeShortCircuit(
-			func() *internal.ValidationError { return nil },
-			func() *internal.ValidationError { return internal.NewValidationError("name", "test error1") },
-			func() *internal.ValidationError { return internal.NewValidationError("surname", "test error2") },
-		)
+		var v1 govalid.ValidationFunc = func() *internal.ValidationError {
+			return nil
+		}
+		var v2 govalid.ValidationFunc = func() *internal.ValidationError {
+			return internal.NewValidationError("name", "test error1")
+		}
+		var v3 govalid.ValidationFunc = func() *internal.ValidationError {
+			return internal.NewValidationError("name", "test error2")
+		}
 
+		composed := govalid.ComposeShortCircuit(v1, v2, v3)
 		assert.NotNil(t, composed())
 		assert.Equal(t, "name", composed().Field())
 		assert.Equal(t, "test error1", composed().Message())

@@ -1,3 +1,5 @@
+![Go Test](https://github.com/Palma99/govalid/actions/workflows/test.yml/badge.svg)
+
 # govalid
 
 **govalid** is a lightweight, extensible validation library for Go that helps you validate fields and data structures in a declarative, composable way. It supports both full validation and short-circuit (fail-fast) strategies.

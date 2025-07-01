@@ -30,6 +30,8 @@ func ComposeShortCircuit(validations ...any) ValidationFunc {
 						return err
 					}
 				}
+			default:
+				panic("ComposeShortCircuit: unsupported type")
 			}
 		}
 		return nil
