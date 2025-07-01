@@ -20,7 +20,7 @@ func NewValidationError(field, message string) *ValidationError {
 	}
 }
 
-func NewValidationErrorf(field, format string, args ...interface{}) *ValidationError {
+func NewValidationErrorf(field, format string, args ...any) *ValidationError {
 	return &ValidationError{
 		field:   field,
 		message: fmt.Sprintf(format, args...),

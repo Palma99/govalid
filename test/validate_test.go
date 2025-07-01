@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Palma99/govalid"
+	"github.com/Palma99/govalid/validators"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,6 +55,34 @@ func TestValidateShouldReturnAllErrors(t *testing.T) {
 	assert.Equal(t, "test error3", errors[2].Message())
 }
 
+func TestValidateShouldWorkWithCustomValidator(t *testing.T) {
+	t.Run("should work with custom validator", func(t *testing.T) {
+		res := govalid.Validate(
+			(func(field, value string) govalid.ValidationFunc {
+				return func() *govalid.ValidationError {
+					if field == value {
+						return nil
+					}
+					return govalid.NewValidationError(field, "must be equal to "+value)
+				}
+			})("field1", "test value"),
+
+			(func(field, value string) govalid.ValidationFunc {
+				return func() *govalid.ValidationError {
+					if value == "value" {
+						return nil
+					}
+					return govalid.NewValidationError(field, "must be equal to value")
+				}
+			})("field2", "value"),
+		)
+
+		assert.True(t, res.HasErrors())
+		assert.Len(t, res.Errors(), 1)
+		assert.Equal(t, "field1", res.FirstError().Field())
+	})
+}
+
 func TestValidateShouldReturnNoErrors(t *testing.T) {
 	callCount := 0
 
@@ -65,4 +94,156 @@ func TestValidateShouldReturnNoErrors(t *testing.T) {
 	assert.Equal(t, 2, callCount)
 	assert.False(t, res.HasErrors())
 	assert.Len(t, res.Errors(), 0)
+}
+
+func TestValidateShouldWorkWithCompose(t *testing.T) {
+	t.Run("should work with compose", func(t *testing.T) {
+		composed1 := govalid.Compose(
+			validators.NonEmpty("name", ""),
+			validators.NonEmpty("surname", ""),
+		)
+
+		composed2 := govalid.Compose(
+			validators.NonEmpty("age", ""),
+			validators.NonEmpty("city", ""),
+		)
+
+		res := govalid.Validate(
+			composed1,
+			composed2,
+		)
+
+		assert.True(t, res.HasErrors())
+		assert.Len(t, res.Errors(), 2)
+		assert.Equal(t, "name", res.FirstError().Field())
+		assert.Equal(t, "age", res.Errors()[1].Field())
+	})
+}
+
+func TestValidateShouldWorkWithComposeAndGroup(t *testing.T) {
+	t.Run("should work with compose and group", func(t *testing.T) {
+		person := struct {
+			Name string
+			Age  int
+		}{
+			Name: "Mario",
+			Age:  18,
+		}
+
+		nameValidator := govalid.Group("name", person.Name,
+			validators.NonEmptyRule(),
+			validators.MinLengthRule(3),
+		)
+
+		ageValidator := govalid.Group("age", person.Age,
+			validators.MinRule(14),
+		)
+
+		personValidator := govalid.Compose(
+			nameValidator,
+			ageValidator,
+		)
+
+		res := govalid.Validate(
+			personValidator,
+		)
+
+		assert.False(t, res.HasErrors())
+	})
+
+	t.Run("should work with compose and group with custom error message", func(t *testing.T) {
+		person := struct {
+			Name string
+			Age  int
+		}{
+			Name: "Mario",
+			Age:  12,
+		}
+
+		nameValidator := govalid.Group("name", person.Name,
+			validators.NonEmptyRule(),
+			validators.MinLengthRule(3),
+		)
+
+		ageValidator := govalid.Group("age", person.Age,
+			validators.MinRule(14, "you are too young!"),
+		)
+
+		personValidator := govalid.Compose(
+			nameValidator,
+			ageValidator,
+		)
+
+		res := govalid.Validate(
+			personValidator,
+		)
+
+		assert.True(t, res.HasErrors())
+		assert.Len(t, res.Errors(), 1)
+		assert.Equal(t, "age", res.FirstError().Field())
+		assert.Equal(t, "you are too young!", res.FirstError().Message())
+	})
+}
+
+func TestValidateWithComposeAll(t *testing.T) {
+	t.Run("validate with ComposeAll should return all errors", func(t *testing.T) {
+
+		compose1 := govalid.ComposeAll(
+			validators.NonEmpty("name", ""),
+			validators.NonEmpty("surname", ""),
+		)
+
+		compose2 := govalid.ComposeAll(
+			validators.NonEmpty("age", ""),
+			validators.NonEmpty("city", ""),
+		)
+
+		emailGroup := govalid.GroupAll("email", "",
+			validators.NonEmptyRule(),
+			validators.IsEmailRule(),
+		)
+
+		res := govalid.ValidateAll(
+			compose1, compose2, emailGroup,
+		)
+
+		assert.True(t, res.HasErrors())
+		assert.Len(t, res.Errors(), 6)
+	})
+
+	t.Run("validate with ComposeAll Compose, Group, GroupAll should return all errors", func(t *testing.T) {
+
+		compose := govalid.ComposeAll(
+			validators.NonEmpty("name", ""),
+			validators.NonEmpty("surname", ""),
+		)
+
+		composeAll := govalid.Compose(
+			validators.NonEmpty("age", ""),
+			validators.NonEmpty("city", ""),
+			validators.NonEmpty("address", ""),
+		)
+
+		group := govalid.GroupAll("email", "",
+			validators.NonEmptyRule(),
+			validators.IsEmailRule(),
+		)
+
+		groupAll := govalid.Group("phone", "",
+			validators.NonEmptyRule(),
+		)
+
+		res := govalid.ValidateAll(
+			compose, composeAll, group, groupAll,
+		)
+
+		assert.True(t, res.HasErrors())
+		assert.Len(t, res.Errors(), 6)
+	})
+
+	t.Run("should throw error if validator is not of type govalid.Validator", func(t *testing.T) {
+		assert.Panics(t, func() {
+			govalid.ValidateAll(1)
+		})
+	})
 }

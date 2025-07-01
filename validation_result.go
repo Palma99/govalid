@@ -1,16 +1,14 @@
 package govalid
 
 type ValidationResult struct {
-	errors    []ValidationError
-	iterIndex int
+	errors []ValidationError
 }
 
 func NewValidationResult(
 	errors ...ValidationError,
 ) ValidationResult {
 	return ValidationResult{
-		errors:    errors,
-		iterIndex: 0,
+		errors: errors,
 	}
 }
 
@@ -26,11 +24,10 @@ func (r ValidationResult) Errors() []ValidationError {
 	return r.errors
 }
 
-func (r *ValidationResult) NextError() *ValidationError {
-	if r.iterIndex >= len(r.errors) {
+func (r *ValidationResult) FirstError() *ValidationError {
+	if !r.HasErrors() {
 		return nil
 	}
-	err := &r.errors[r.iterIndex]
-	r.iterIndex++
-	return err
+
+	return &r.errors[0]
 }
