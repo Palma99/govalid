@@ -45,13 +45,13 @@ func validate(failFastMode bool, validator any) ValidationResult {
 // i.e. Validating a group and a composed
 //
 //	composed := govalid.Compose(
-//		govalid.NonEmpty("name", person.Name),
-//		govalid.NonEmpty("surname", person.Surname),
+//		validators.NonEmpty("name", person.Name),
+//		validators.NonEmpty("surname", person.Surname),
 //	)
 //
 //	group := govalid.Group("email", person.Email,
-//		govalid.NonEmptyRule(),
-//		govalid.IsEmailRule()
+//		validators.NonEmptyRule(),
+//		validators.IsEmailRule()
 //	)
 //
 //	govalid.Validate(composed, group)

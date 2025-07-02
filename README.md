@@ -35,14 +35,14 @@ person := struct {
 
 // Compose validations to gather all errors
 composed := govalid.Compose(
-	govalid.NonEmpty("name", person.Name),
-	govalid.NonEmpty("surname", person.Surname),
+	validators.NonEmpty("name", person.Name),
+	validators.NonEmpty("surname", person.Surname),
 )
 
 // Group validations for a field
 emailGroup := govalid.Group("email", person.Email,
-	govalid.NonEmptyRule(),
-	govalid.IsEmailRule(),
+	validators.NonEmptyRule(),
+	validators.IsEmailRule(),
 )
 
 result := govalid.Validate(composed, emailGroup)
@@ -79,8 +79,8 @@ Combines multiple validation functions. All will be evaluated.
 
 ```go
 composed := govalid.Compose(
-	govalid.NonEmpty("username", input.Username),
-	govalid.NonEmpty("password", input.Password),
+	validators.NonEmpty("username", input.Username),
+	validators.NonEmpty("password", input.Password),
 )
 ```
 
@@ -90,8 +90,8 @@ Combines multiple validation functions. All will be evaluated.
 
 ```go
 composed := govalid.ComposeShortCircuit(
-	govalid.NonEmpty("username", ""),
-	govalid.NonEmpty("password", ""),
+	validators.NonEmpty("username", ""),
+	validators.NonEmpty("password", ""),
 )
 ```
 
@@ -103,8 +103,8 @@ Applies multiple `ValidationRules` to a field. Returns all errors.
 
 ```go
 group := govalid.Group("email", user.Email,
-	govalid.NonEmptyRule(),
-	govalid.IsEmailRule(),
+	validators.NonEmptyRule(),
+	validators.IsEmailRule(),
 )
 ```
 
@@ -114,8 +114,8 @@ Stops at the first rule that fails.
 
 ```go
 group := govalid.GroupShortCircuit("email", user.Email,
-	govalid.NonEmptyRule(),
-	govalid.IsEmailRule(),
+	validators.NonEmptyRule(),
+	validators.IsEmailRule(),
 )
 ```
 

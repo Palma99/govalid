@@ -11,8 +11,8 @@ type ValidationRule func(field string, value any) ValidationFunc
 // In this example only the name error will be returned, surname validation will not be evaluated
 //
 //	composed := govalid.ComposeShortCircuit(
-//		govalid.NonEmpty("name", "")
-//		govalid.NonEmpty("surname", ""),
+//		validators.NonEmpty("name", "")
+//		validators.NonEmpty("surname", ""),
 //	)
 //
 //	res := govalid.Validate(composed)
